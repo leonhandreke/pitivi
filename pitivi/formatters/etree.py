@@ -21,6 +21,8 @@
 # Boston, MA 02110-1301, USA.
 
 from gettext import gettext as _
+import re
+
 import gobject
 gobject.threads_init()
 import gst
@@ -32,6 +34,7 @@ from pitivi.factories.base import SourceFactory
 from pitivi.factories.file import FileSourceFactory
 from pitivi.factories.operation import EffectFactory
 from pitivi.timeline.track import Track, TrackEffect
+from pitivi.factories.title import TitleSourceFactory
 from pitivi.timeline.timeline import TimelineObject
 from pitivi.formatters.base import Formatter, FormatterError
 from pitivi.utils import get_filesystem_encoding
@@ -152,6 +155,8 @@ class ElementTreeFormatter(Formatter):
         element = self._saveObjectFactory(source)
         if isinstance(source, FileSourceFactory):
             return self._saveFileSourceFactory(element, source)
+        elif isinstance(source, TitleSourceFactory):
+            return self._saveTitleSourceFactory(element, source)
 
         return element
 
@@ -185,6 +190,11 @@ class ElementTreeFormatter(Formatter):
 
         return element
 
+    def _loadColor(self, str):
+        match = re.match('#(..)(..)(..)(..)$', str)
+        assert match, "couldn't parse saved color %r" % str
+        return tuple(int(x, 16) / 255 for x in match.groups())
+
     def _loadObjectFactory(self, klass, element):
         """Instantiate the specified class and set its attributes.
 
@@ -197,6 +207,19 @@ class ElementTreeFormatter(Formatter):
         args = []
         if issubclass(klass, FileSourceFactory):
             filename = element.attrib.get("filename")
+
+        if klass == TitleSourceFactory:
+            props = {}
+            props['text'] = element.attrib['text']
+            props['font'], size_str = \
+                element.attrib['font'].rsplit(None, 1)
+            props['text_size'] = int(size_str)
+            props['bg_color'] = self._loadColor(element.attrib["bg_color"])
+            props['fg_color'] = self._loadColor(element.attrib["fg_color"])
+            props['x_alignment'] = float(element.attrib["x_alignment"])
+            props['y_alignment'] = float(element.attrib["y_alignment"])
+            factory = klass(**props)
+        elif filename is not None:
             if isinstance(filename, unicode):
                 filename = filename.encode("utf-8")
             args.append(filename)
@@ -237,6 +260,21 @@ class ElementTreeFormatter(Formatter):
             filename = source.filename
         element.attrib["filename"] = filename
 
+        return element
+
+    def _saveColor(self, color):
+        return '#%02x%02x%02x%02x' % tuple(
+            int(x * 255) for x in (color[0], color[1], color[2], color[3]))
+
+    def _saveTitleSourceFactory(self, element, source):
+        props = source.source_kw
+        element.attrib["text"] = props["text"]
+        element.attrib["font"] = '%s %d' % \
+            (source.source_kw["font"], props["text_size"])
+        element.attrib["bg_color"] = self._saveColor(props["bg_color"])
+        element.attrib["fg_color"] = self._saveColor(props["fg_color"])
+        element.attrib["x_alignment"] = str(props["x_alignment"])
+        element.attrib["y_alignment"] = str(props["y_alignment"])
         return element
 
     def _saveFactoryRef(self, factory):
@@ -734,7 +772,14 @@ class ElementTreeFormatter(Formatter):
             self.emit("new-project-failed", project_uri, e)
             return
 
-        uris = [source.uri for source in sources]
+        uris = []
+
+        for source in sources:
+            if isinstance(source, TitleSourceFactory):
+                project.sources.addFactory(source)
+            else:
+                uris.append(source.uri)
+
         project.sources.nb_file_to_import = len(uris)
         discoverer = project.sources.discoverer
         discoverer.connect("discovery-done", self._discovererDiscoveryDoneCb,
@@ -742,7 +787,7 @@ class ElementTreeFormatter(Formatter):
         discoverer.connect("discovery-error", self._discovererDiscoveryErrorCb,
                 project, sources, uris, closure, project_uri)
 
-        if not sources:
+        if not uris:
             self._finishLoadingProject(project)
             return
         # start the rediscovering from the first source
