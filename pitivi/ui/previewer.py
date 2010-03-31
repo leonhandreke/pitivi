@@ -39,6 +39,7 @@ from pitivi.settings import GlobalSettings
 from pitivi.ui.zoominterface import Zoomable
 from pitivi.log.loggable import Loggable
 from pitivi.factories.file import PictureFileSourceFactory
+from pitivi.factories.title import TitleSourceFactory
 from pitivi.thumbnailcache import ThumbnailCache
 from pitivi.ui.prefs import PreferencesDialog
 from pitivi.receiver import receiver, handler
@@ -120,7 +121,7 @@ def get_preview_for_object(instance, trackobject):
         if stream_type == stream.AudioStream:
             previewers[key] = RandomAccessAudioPreviewer(instance, factory, stream_)
         elif stream_type == stream.VideoStream:
-            if type(factory) == PictureFileSourceFactory:
+            if type(factory) in (TitleSourceFactory, PictureFileSourceFactory):
                 previewers[key] = StillImagePreviewer(instance, factory, stream_)
             else:
                 previewers[key] = RandomAccessVideoPreviewer(instance, factory, stream_)
