@@ -194,7 +194,8 @@ class RandomAccessPreviewer(Previewer):
         self.theight = 50
         self.waiting_timestamp = None
 
-        self._pipelineInit(factory, bin)
+        self.pipeline = self._pipelineInit(factory, bin)
+        self.pipeline.set_state(gst.STATE_PAUSED)
 
     def _pipelineInit(self, factory, bin):
         """Create the pipeline for the preview process. Subclasses should
@@ -369,7 +370,7 @@ class RandomAccessVideoPreviewer(RandomAccessPreviewer):
         caps = ("video/x-raw-rgb,height=(int) %d,width=(int) %d" %
             (self.theight, self.twidth + 2))
         filter_ = utils.filter_(caps)
-        self.videopipeline = utils.pipeline({
+        pipeline = utils.pipeline({
             sbin: csp,
             csp: scale,
             scale: filter_,
@@ -377,7 +378,7 @@ class RandomAccessVideoPreviewer(RandomAccessPreviewer):
             sink: None
         })
         sink.connect('thumbnail', self._thumbnailCb)
-        self.videopipeline.set_state(gst.STATE_PAUSED)
+        return pipeline
 
     def _segment_for_time(self, time):
         # quantize thumbnail timestamps to maximum granularity
@@ -388,7 +389,7 @@ class RandomAccessVideoPreviewer(RandomAccessPreviewer):
 
     def _startThumbnail(self, timestamp):
         RandomAccessPreviewer._startThumbnail(self, timestamp)
-        return self.videopipeline.seek(1.0,
+        return self.pipeline.seek(1.0,
             gst.FORMAT_TIME, gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_ACCURATE,
             gst.SEEK_TYPE_SET, timestamp,
             gst.SEEK_TYPE_NONE, -1)
@@ -424,17 +425,17 @@ class RandomAccessAudioPreviewer(RandomAccessPreviewer):
 
         self.audioSink = ArraySink()
         conv = gst.element_factory_make("audioconvert")
-        self.audioPipeline = utils.pipeline({
+        pipeline = utils.pipeline({
             sbin: conv,
             conv: self.audioSink,
             self.audioSink: None})
-        bus = self.audioPipeline.get_bus()
+        bus = pipeline.get_bus()
         bus.add_signal_watch()
         bus.connect("message::segment-done", self._busMessageSegmentDoneCb)
         bus.connect("message::error", self._busMessageErrorCb)
 
         self._audio_cur = None
-        self.audioPipeline.set_state(gst.STATE_PAUSED)
+        return pipeline
 
     def _spacing(self):
         return 0
@@ -456,14 +457,14 @@ class RandomAccessAudioPreviewer(RandomAccessPreviewer):
     def _startThumbnail(self, (timestamp, duration)):
         RandomAccessPreviewer._startThumbnail(self, (timestamp, duration))
         self._audio_cur = timestamp, duration
-        res = self.audioPipeline.seek(1.0,
+        res = self.pipeline.seek(1.0,
             gst.FORMAT_TIME,
             gst.SEEK_FLAG_FLUSH | gst.SEEK_FLAG_ACCURATE | gst.SEEK_FLAG_SEGMENT,
             gst.SEEK_TYPE_SET, timestamp,
             gst.SEEK_TYPE_SET, timestamp + duration)
         if not res:
             self.warning("seek failed %s", timestamp)
-        self.audioPipeline.set_state(gst.STATE_PLAYING)
+        self.pipeline.set_state(gst.STATE_PLAYING)
 
         return res
 
