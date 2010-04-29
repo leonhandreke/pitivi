@@ -1,5 +1,7 @@
 
 import cairo
+import pango
+import pangocairo
 import gobject
 import gst
 
@@ -57,14 +59,17 @@ class TitleSource(gst.BaseSrc):
 
         # text
         cr.set_source_rgba(*self.fg_color)
-        cr.set_font_size(self.text_size)
-        (x_bearing, y_bearing, t_width, t_height, x_advance, y_advance) = \
-            cr.text_extents(self.text)
+        pcr = pangocairo.CairoContext(cr)
+        layout = pcr.create_layout()
+        layout.set_font_description(
+            pango.FontDescription("%s %d" % (self.font, self.text_size)))
+        layout.set_text(self.text)
+        (ink, (x_bearing, y_bearing, t_width, t_height)) = \
+            layout.get_pixel_extents()
         x = (width - t_width) * self.x_alignment - x_bearing
         y = (height - t_height) * self.y_alignment - y_bearing
         cr.move_to(x, y)
-        cr.show_text(self.text)
-        cr.fill()
+        pcr.show_layout(layout)
 
         b = gst.Buffer(surface.get_data())
         b.timestamp = self.curpos
