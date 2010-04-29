@@ -30,6 +30,7 @@ class TitleSource(gst.BaseSrc):
         self.set_format(gst.FORMAT_TIME)
 
         self.text = text
+        self.font = font
         self.text_size = text_size
         self.x_alignment = x_alignment
         self.y_alignment = y_alignment
