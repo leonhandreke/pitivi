@@ -2,6 +2,7 @@
 import gtk
 
 from pitivi.ui.glade import GladeWindow
+from pitivi.ui.title_preview import TitlePreview
 
 def get_color(c):
     return (
@@ -35,8 +36,16 @@ class TitleEditDialog(GladeWindow):
         self.x_alignment = 0.5
         self.y_alignment = 0.5
 
+        self.preview = TitlePreview(text=self.text)
+        self.widgets['preview_frame'].add(self.preview)
+        # XXX: set preview_frame's aspect ratio
+        self.preview.set_size_request(400, 300)
+
         self.widgets['color_button'].connect('clicked', self._run_color_dialog)
         self.widgets['font_button'].connect('clicked', self._run_font_dialog)
+
+        buffer = self.widgets['textview'].get_buffer()
+        buffer.connect('changed', self._buffer_changed)
 
         # Hack: GladeWindow hides TitleEditDialog's run() with gtk.Dialog's;
         # undo that.
@@ -92,6 +101,10 @@ class TitleEditDialog(GladeWindow):
             self.text_size = int(size_str)
             print (self.font, self.text_size)
 
+    def _buffer_changed(self, buffer):
+        text = buffer.get_text(*buffer.get_bounds())
+        self.preview.props.text = text
+
     def set(self, **kw):
         self.__dict__.update(kw)
 
@@ -99,24 +112,13 @@ class TitleEditDialog(GladeWindow):
         buffer = self.widgets['textview'].props.buffer
         buffer.set_text(self.text)
 
-        for i, (x_alignment, y_alignment) in enumerate(alignments):
-            if (self.x_alignment == x_alignment and
-                self.y_alignment == y_alignment):
-                self.widgets['radiobutton%d' % (i + 1)].props.active = True
-
     def _copy_from_dialog(self):
         buffer = self.widgets['textview'].props.buffer
         self.text = buffer.get_text(*buffer.get_bounds())
 
-        for i, (x_alignment, y_alignment) in enumerate(alignments):
-            if self.widgets['radiobutton%d' % (i + 1)].props.active:
-                break
-
-        self.x_alignment = x_alignment
-        self.y_alignment = y_alignment
-
     def run(self):
         self._copy_to_dialog()
+        self.window.show_all()
         response = gtk.Dialog.run(self.window)
         self._copy_from_dialog()
         return response
