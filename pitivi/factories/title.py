@@ -1,7 +1,6 @@
 
 import gst
 from pitivi.elements.titlesrc import TitleSource
-from pitivi.elements.imagefreeze import ImageFreeze
 from pitivi.factories.base import SourceFactory
 from pitivi.stream import VideoStream
 
@@ -37,7 +36,7 @@ class TitleSourceFactory(SourceFactory):
         pad.set_caps(self.filter_caps)
 
         csp = gst.element_factory_make('alphacolor')
-        bin.freeze = ImageFreeze()
+        bin.freeze = gst.element_factory_make("imagefreeze")
         bin.alpha = gst.element_factory_make("alpha", "internal-alpha")
         capsfilter = gst.element_factory_make('capsfilter')
         capsfilter.props.caps = output_stream.caps.copy()
