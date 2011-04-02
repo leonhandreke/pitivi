@@ -100,8 +100,8 @@ class TitleEditDialog(GladeWindow):
                 font_selection.props.font_name.rsplit(None, 1)
             self.text_size = int(size_str)
             print (self.font, self.text_size)
-	    	self.preview.text_item.props.font = font_selection.get_font_name()
-	    	self.preview.update_font()
+            self.preview.text_item.props.font = font_selection.get_font_name()
+            self.preview.update_font()
 
     def _buffer_changed(self, buffer):
         text = buffer.get_text(*buffer.get_bounds())
@@ -117,8 +117,8 @@ class TitleEditDialog(GladeWindow):
     def _copy_from_dialog(self):
         buffer = self.widgets['textview'].props.buffer
         self.text = buffer.get_text(*buffer.get_bounds())
-		self.x_alignment = self.preview.x
-		self.y_alignment = self.preview.y
+        self.x_alignment = self.preview.x
+        self.y_alignment = self.preview.y
 
     def run(self):
         self._copy_to_dialog()

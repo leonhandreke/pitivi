@@ -169,8 +169,8 @@ class TitlePreview(gtk.EventBox):
         self.last_y = event.y
 
     def update_font(self):
-		if hasattr(self, 'text_item'):
-        	text_w1, text_h1 = text_size(self.text_item)
+        if hasattr(self, 'text_item'):
+            text_w1, text_h1 = text_size(self.text_item)
 
             # Update rectangle sizes to match text.
             self.rect1.props.width = text_w1 + 2 * self.PADDING
@@ -212,7 +212,7 @@ class TitlePreview(gtk.EventBox):
             dy = canvas_bounds.y2 - group_bounds.y2
 
         self.group.translate(dx, dy)
-		self.x = ((self.group.get_bounds().x1 + ((self.group.get_bounds().x2 - self.group.get_bounds().x1)/2)) /400)
-		self.y = ((self.group.get_bounds().y1 + ((self.group.get_bounds().y2 - self.group.get_bounds().y1)/2)) / 300)
+        self.x = ((self.group.get_bounds().x1 + ((self.group.get_bounds().x2 - self.group.get_bounds().x1)/2)) /400)
+        self.y = ((self.group.get_bounds().y1 + ((self.group.get_bounds().y2 - self.group.get_bounds().y1)/2)) / 300)
         return False
 
