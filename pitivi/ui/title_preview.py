@@ -168,17 +168,23 @@ class TitlePreview(gtk.EventBox):
         self.last_x = event.x
         self.last_y = event.y
 
-    def update_font(self):
+    def update_font(self, font_name):
+        self.text_item.props.font = font_name
         if hasattr(self, 'text_item'):
             text_w1, text_h1 = text_size(self.text_item)
 
-            # Update rectangle sizes to match text.
+            # Update rectangle sizes to match new font type or font size.
             self.rect1.props.width = text_w1 + 2 * self.PADDING
             self.rect1.props.height = text_h1 + 2 * self.PADDING
             self.rect2.props.width = text_w1 + 2 * self.PADDING
             self.rect2.props.height = text_h1 + 2 * self.PADDING
 
             self.update_position(0, 0)
+
+    def update_color(self, fg_color_string, bg_color_string):
+        # color is without alpha, goocanvas doesn't support alpha
+        self.text_item.props.fill_color = fg_color_string
+        self.canvas.props.background_color = bg_color_string
 
     def update_position(self, dx, dy):
         #print 'before', (dx, dy)

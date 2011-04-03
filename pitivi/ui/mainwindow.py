@@ -702,8 +702,8 @@ class PitiviMainWindow(gtk.Window, Loggable):
                 font=dialog.font,
                 x_alignment=dialog.x_alignment,
                 y_alignment=dialog.y_alignment,
-                bg_color=dialog.bg_color,
-                fg_color=dialog.fg_color))
+                bg_color=dialog.get_bg_color_bgra(),
+                fg_color=dialog.get_fg_color_bgra()))
 
         dialog.destroy()
 

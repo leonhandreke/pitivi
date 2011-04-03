@@ -4,17 +4,10 @@ import gtk
 from pitivi.ui.glade import GladeWindow
 from pitivi.ui.title_preview import TitlePreview
 
-def get_color(c):
-    return (
-        c.props.current_color.red_float,
-        c.props.current_color.green_float,
-        c.props.current_color.blue_float,
-        c.props.current_alpha / 65535.0)
-
-def set_color(c, t):
-    c.props.current_color = gtk.gdk.Color(
-        int(t[0] * 65535.0), int(t[1] * 65535.0), int(t[2] * 65535.0))
-    c.props.current_alpha = int(t[3] * 65535.0)
+def set_current_color(color_selection, color):
+    color_selection.props.current_color = gtk.gdk.Color(
+        int(color[0] * 65535.0), int(color[1] * 65535.0), int(color[2] * 65535.0))
+    color_selection.props.current_alpha = int(color[3] * 65535.0)
 
 alignments = [
         (0.0, 0.0), (0.5, 0.0), (1.0, 0.0),
@@ -55,15 +48,15 @@ class TitleEditDialog(GladeWindow):
         dialog = gtk.Dialog()
         content_area = dialog.get_content_area()
 
-        fg_frame = gtk.Frame("Foreground color")
+        fg_frame = gtk.Frame("Text color")
         fg_color_selection = gtk.ColorSelection()
         fg_color_selection.props.has_opacity_control = True
-        set_color(fg_color_selection, self.fg_color)
+        set_current_color(fg_color_selection, self.fg_color)
 
         bg_frame = gtk.Frame("Background color")
         bg_color_selection = gtk.ColorSelection()
         bg_color_selection.props.has_opacity_control = True
-        set_color(bg_color_selection, self.bg_color)
+        set_current_color(bg_color_selection, self.bg_color)
 
         fg_frame.add(fg_color_selection)
         bg_frame.add(bg_color_selection)
@@ -77,8 +70,9 @@ class TitleEditDialog(GladeWindow):
         dialog.destroy()
 
         if response == gtk.RESPONSE_OK:
-            self.fg_color = get_color(fg_color_selection)
-            self.bg_color = get_color(bg_color_selection)
+            self._set_fg_color(fg_color_selection)
+            self._set_bg_color(bg_color_selection)
+            self.preview.update_color(self.fg_color_string, self.bg_color_string)
 
     def _run_font_dialog(self, _button):
         dialog = gtk.Dialog()
@@ -99,9 +93,31 @@ class TitleEditDialog(GladeWindow):
             (self.font, size_str) = \
                 font_selection.props.font_name.rsplit(None, 1)
             self.text_size = int(size_str)
-            print (self.font, self.text_size)
-            self.preview.text_item.props.font = font_selection.get_font_name()
-            self.preview.update_font()
+            self.preview.update_font(font_selection.get_font_name())
+
+    def _set_bg_color(self, color_selection):
+        self.bg_color = ((color_selection.props.current_color.red_float),
+            (color_selection.props.current_color.green_float),
+            (color_selection.props.current_color.blue_float),
+            (color_selection.props.current_alpha / 65535.0))
+        self.bg_color_string = color_selection.props.current_color.to_string()
+
+    def _set_fg_color(self, color_selection):
+        self.fg_color = ((color_selection.props.current_color.red_float),
+            (color_selection.props.current_color.green_float),
+            (color_selection.props.current_color.blue_float),
+            (color_selection.props.current_alpha / 65535.0))
+        self.fg_color_string = color_selection.props.current_color.to_string()
+
+    def get_fg_color_bgra(self):
+        # The color-order has to be reversed for cairo.Context
+        # BGRA
+        return self.fg_color[2], self.fg_color[1], self.fg_color[0], self.fg_color[3]     
+
+    def get_bg_color_bgra(self):
+        # The color-order has to be reversed for cairo.Context
+        # BGRA
+        return self.bg_color[2], self.bg_color[1], self.bg_color[0], self.bg_color[3] 
 
     def _buffer_changed(self, buffer):
         text = buffer.get_text(*buffer.get_bounds())
