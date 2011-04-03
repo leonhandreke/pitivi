@@ -1,5 +1,6 @@
 
 import gtk
+import pango
 
 from pitivi.ui.glade import GladeWindow
 from pitivi.ui.title_preview import TitlePreview
@@ -28,6 +29,7 @@ class TitleEditDialog(GladeWindow):
         # Centre alignment is the default.
         self.x_alignment = 0.5
         self.y_alignment = 0.5
+        self.justification = gtk.JUSTIFY_LEFT
 
         self.preview = TitlePreview(text=self.text)
         self.widgets['preview_frame'].add(self.preview)
@@ -36,6 +38,9 @@ class TitleEditDialog(GladeWindow):
 
         self.widgets['color_button'].connect('clicked', self._run_color_dialog)
         self.widgets['font_button'].connect('clicked', self._run_font_dialog)
+        self.widgets['align_left_button'].connect('clicked', self._justify_text, gtk.JUSTIFY_LEFT)
+        self.widgets['align_center_button'].connect('clicked', self._justify_text, gtk.JUSTIFY_CENTER)
+        self.widgets['align_right_button'].connect('clicked', self._justify_text, gtk.JUSTIFY_RIGHT)
 
         buffer = self.widgets['textview'].get_buffer()
         buffer.connect('changed', self._buffer_changed)
@@ -142,4 +147,28 @@ class TitleEditDialog(GladeWindow):
         response = gtk.Dialog.run(self.window)
         self._copy_from_dialog()
         return response
+
+    def _justify_text(self, _button, justification):
+        if justification == gtk.JUSTIFY_LEFT or gtk.JUSTIFY_RIGHT or gtk.JUSTIFY_CENTER:
+            self.widgets['textview'].set_justification(justification)
+            if justification == gtk.JUSTIFY_LEFT:
+                self.preview.update_justification(_convert_to_pango_justification(justification))
+            elif justification == gtk.JUSTIFY_RIGHT:
+                self.preview.update_justification(_convert_to_pango_justification(justification))
+            elif justification == gtk.JUSTIFY_CENTER:
+                self.preview.update_justification(_convert_to_pango_justification(justification))
+            
+            self.justification = justification
+        return
+
+    def get_justification_pango(self):
+        return _convert_to_pango_justification(self.justification)
+
+def _convert_to_pango_justification(gtk_justification):
+    if gtk_justification == gtk.JUSTIFY_LEFT:
+        return pango.ALIGN_LEFT
+    elif gtk_justification == gtk.JUSTIFY_RIGHT:
+        return pango.ALIGN_RIGHT
+    elif gtk_justification == gtk.JUSTIFY_CENTER:
+        return pango.ALIGN_CENTER
 

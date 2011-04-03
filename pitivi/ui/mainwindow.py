@@ -703,7 +703,8 @@ class PitiviMainWindow(gtk.Window, Loggable):
                 x_alignment=dialog.x_alignment,
                 y_alignment=dialog.y_alignment,
                 bg_color=dialog.get_bg_color_bgra(),
-                fg_color=dialog.get_fg_color_bgra()))
+                fg_color=dialog.get_fg_color_bgra(),
+                justification = dialog.get_justification_pango()))
 
         dialog.destroy()
 

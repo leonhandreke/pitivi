@@ -168,6 +168,9 @@ class TitlePreview(gtk.EventBox):
         self.last_x = event.x
         self.last_y = event.y
 
+    def update_justification(self, justification):
+        self.text_item.props.alignment = justification    
+    
     def update_font(self, font_name):
         self.text_item.props.font = font_name
         if hasattr(self, 'text_item'):
