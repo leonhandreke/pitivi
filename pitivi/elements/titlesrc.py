@@ -16,8 +16,7 @@ class TitleSource(gst.BaseSrc):
         )
 
     def __init__(self, text='title',
-            font='Sans',
-            text_size=128,
+            font_name='Sans 24',
             x_alignment=0.5,
             y_alignment=0.5,
             bg_color=None,
@@ -33,8 +32,7 @@ class TitleSource(gst.BaseSrc):
         self.set_format(gst.FORMAT_TIME)
 
         self.text = text
-        self.font = font
-        self.text_size = text_size
+        self.font_name = font_name
         self.x_alignment = x_alignment
         self.y_alignment = y_alignment
         self.bg_color = bg_color if bg_color is not None else (0, 0, 0, 1)
@@ -63,8 +61,7 @@ class TitleSource(gst.BaseSrc):
         cr.set_source_rgba(*self.fg_color)
         pcr = pangocairo.CairoContext(cr)
         layout = pcr.create_layout()
-        layout.set_font_description(
-            pango.FontDescription("%s %d" % (self.font, self.text_size)))
+        layout.set_font_description(pango.FontDescription(self.font_name))
         layout.set_text(self.text)
         layout.set_alignment(self.justification)
         (ink, (x_bearing, y_bearing, t_width, t_height)) = \

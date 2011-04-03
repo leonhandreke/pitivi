@@ -87,6 +87,7 @@
           <widget class="GtkVBox" id="vbox1">
             <property name="visible">True</property>
             <property name="border_width">6</property>
+            <property name="orientation">vertical</property>
             <child>
               <widget class="GtkAspectFrame" id="preview_frame">
                 <property name="visible">True</property>

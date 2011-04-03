@@ -45,7 +45,7 @@ class TitlePreview(gtk.EventBox):
             gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
     }
 
-    def __init__(self, **kw):
+    def __init__(self, font_name, **kw):
         gtk.EventBox.__init__(self)
         self.add_events(
             gtk.gdk.BUTTON_PRESS_MASK |
@@ -63,7 +63,7 @@ class TitlePreview(gtk.EventBox):
             fill_color_rgba=0xffffffff,
             x=self.PADDING,
             y=self.PADDING,
-            font='Sans Bold 24',
+            font=font_name,
             text=self.text)
 
         text_w, text_h = text_size(self.text_item)
@@ -137,9 +137,14 @@ class TitlePreview(gtk.EventBox):
             self.y = value
         elif property.name == 'alignment':
             self.alignment = value
-
             if hasattr(self, 'text_item'):
                 self.text_item.props.alignment = value
+        elif property.name == 'background-color':
+            if hasattr(self, 'canvas'):
+                self.update_color(bg_color_string=value)
+        elif property.name == 'foreground-color':
+            if hasattr(self, 'text_item'):
+                self.update_color(fg_color_string=value)
         else:
             raise AttributeError(property.name)
 
@@ -169,9 +174,19 @@ class TitlePreview(gtk.EventBox):
         self.last_y = event.y
 
     def update_justification(self, justification):
+        """Update justification/alignment of text inside text box.
+    
+        Keyword arguments:
+        justification -- Pango Alignment Constants
+        """
         self.text_item.props.alignment = justification    
     
     def update_font(self, font_name):
+        """Update text font in the preview box.
+
+        Keyword arguments:
+        font_name -- usualy from gtk.FontSelection.get_font_name()
+        """
         self.text_item.props.font = font_name
         if hasattr(self, 'text_item'):
             text_w1, text_h1 = text_size(self.text_item)
@@ -184,10 +199,19 @@ class TitlePreview(gtk.EventBox):
 
             self.update_position(0, 0)
 
-    def update_color(self, fg_color_string, bg_color_string):
-        # color is without alpha, goocanvas doesn't support alpha
-        self.text_item.props.fill_color = fg_color_string
-        self.canvas.props.background_color = bg_color_string
+    def update_color(self, fg_color_string=None, bg_color_string=None):
+        """Update color of text and background in the preview box.
+        
+        Keyword arguments:
+        fg_color_string -- usualy from gtk.gdk.Color.to_string()
+        fg_color_string -- usualy from gtk.gdk.Color.to_string()
+
+        Goocanvas doesn't support alpha so color is without alpha.
+        """
+        if fg_color_string != None:
+            self.text_item.props.fill_color = fg_color_string
+        if bg_color_string != None:
+            self.canvas.props.background_color = bg_color_string
 
     def update_position(self, dx, dy):
         #print 'before', (dx, dy)
@@ -221,7 +245,7 @@ class TitlePreview(gtk.EventBox):
             dy = canvas_bounds.y2 - group_bounds.y2
 
         self.group.translate(dx, dy)
-        self.x = ((self.group.get_bounds().x1 + ((self.group.get_bounds().x2 - self.group.get_bounds().x1)/2)) /400)
-        self.y = ((self.group.get_bounds().y1 + ((self.group.get_bounds().y2 - self.group.get_bounds().y1)/2)) / 300)
+        self.x = ((self.group.get_bounds().x1 + ((self.group.get_bounds().x2 - self.group.get_bounds().x1)/2)) / self.size_request()[0])
+        self.y = ((self.group.get_bounds().y1 + ((self.group.get_bounds().y2 - self.group.get_bounds().y1)/2)) / self.size_request()[1])
         return False
 

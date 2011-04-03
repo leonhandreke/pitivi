@@ -698,8 +698,7 @@ class PitiviMainWindow(gtk.Window, Loggable):
         if response == gtk.RESPONSE_OK:
             self.app.current.sources.addFactory(TitleSourceFactory(
                 text=dialog.text,
-                text_size=dialog.text_size,
-                font=dialog.font,
+                font_name=dialog.get_font_name(),
                 x_alignment=dialog.x_alignment,
                 y_alignment=dialog.y_alignment,
                 bg_color=dialog.get_bg_color_bgra(),
