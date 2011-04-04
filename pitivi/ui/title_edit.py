@@ -177,8 +177,8 @@ class TitleEditDialog(GladeWindow):
         """Put last changes from dialog into variables."""
         buffer = self.widgets['textview'].props.buffer
         self.text = buffer.get_text(*buffer.get_bounds())
-        self.x_alignment = self.preview.x
-        self.y_alignment = self.preview.y
+        self.x_alignment = self.preview.x_position
+        self.y_alignment = self.preview.y_position
 
     def run(self):
         """Show TitleEdit dialog."""

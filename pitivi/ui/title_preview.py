@@ -94,7 +94,7 @@ class TitlePreview(gtk.EventBox):
         #print (self.x, self.y)
         #print (self.group.get_bounds().x1, self.group.get_bounds().y1)
         self.group.translate(self.props.x, self.props.y)
-        #print (self.group.get_bounds().x1, self.group.get_bounds().y1)
+        #print (self.group.get_bounds().x1, self.group.get_bounds().y1)300
 
         self.connect('button-press-event', self.button_press)
         self.connect('button-release-event', self.button_release)
@@ -245,7 +245,8 @@ class TitlePreview(gtk.EventBox):
             dy = canvas_bounds.y2 - group_bounds.y2
 
         self.group.translate(dx, dy)
-        self.x = ((self.group.get_bounds().x1 + ((self.group.get_bounds().x2 - self.group.get_bounds().x1)/2)) / self.size_request()[0])
-        self.y = ((self.group.get_bounds().y1 + ((self.group.get_bounds().y2 - self.group.get_bounds().y1)/2)) / self.size_request()[1])
+        self.x_position = ((self.group.get_bounds().x1 + ((self.group.get_bounds().x2 - self.group.get_bounds().x1)/2)) / self.size_request()[0])
+        self.y_position = ((self.group.get_bounds().y1 + ((self.group.get_bounds().y2 - self.group.get_bounds().y1)/2)) / self.size_request()[1])
+        #print self.x, 'X-Y', self.x_position * 
         return False
 

@@ -66,8 +66,10 @@ class TitleSource(gst.BaseSrc):
         layout.set_alignment(self.justification)
         (ink, (x_bearing, y_bearing, t_width, t_height)) = \
             layout.get_pixel_extents()
+        #XXX SOMETHING WRONG. MAYBE width and t_width doesnt correspond?
         x = (width - t_width) * self.x_alignment - x_bearing
         y = (height - t_height) * self.y_alignment - y_bearing
+        print 'x and y _bearing ->', x_bearing, y_bearing, 'x og y:', x, y
         cr.move_to(x, y)
         pcr.show_layout(layout)
 
