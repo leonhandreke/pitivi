@@ -53,7 +53,7 @@ class TitleEditDialog(GladeWindow):
         self.preview = TitlePreview(text=self.text, font_name=self.font_name)
         self.widgets['preview_frame'].add(self.preview)
         # XXX: set preview_frame's aspect ratio
-        self.preview.set_size_request(400, 300)
+        self.preview.set_size_request(720, 576)
 
         self.widgets['color_button'].connect('clicked', self._run_color_dialog)
         self.widgets['font_button'].connect('clicked', self._run_font_dialog)
@@ -196,15 +196,15 @@ class TitleEditDialog(GladeWindow):
             one of three static vars (gtk.JUSTIFY_LEFT, gtk.JUSTIFY_RIGHT, gtk.JUSTIFY_CENTER)  
         """
         if justification == gtk.JUSTIFY_LEFT or gtk.JUSTIFY_RIGHT or gtk.JUSTIFY_CENTER:
-            self.widgets['textview'].set_justification(justification)
-            if justification == gtk.JUSTIFY_LEFT:
-                self.preview.update_justification(_convert_to_pango_justification(justification))
-            elif justification == gtk.JUSTIFY_RIGHT:
-                self.preview.update_justification(_convert_to_pango_justification(justification))
-            elif justification == gtk.JUSTIFY_CENTER:
-                self.preview.update_justification(_convert_to_pango_justification(justification))
-            
             self.justification = justification
+            if justification == gtk.JUSTIFY_LEFT:
+                self.preview.update_justification(self.get_justification_pango())
+            elif justification == gtk.JUSTIFY_RIGHT:
+                self.preview.update_justification(self.get_justification_pango())
+            elif justification == gtk.JUSTIFY_CENTER:
+                self.preview.update_justification(self.get_justification_pango())
+            
+            
         return
 
     def get_justification_pango(self):
