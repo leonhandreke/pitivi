@@ -699,8 +699,8 @@ class PitiviMainWindow(gtk.Window, Loggable):
             self.app.current.sources.addFactory(TitleSourceFactory(
                 text=dialog.text,
                 font_name=dialog.get_font_name(),
-                x_alignment=dialog.x_alignment,
-                y_alignment=dialog.y_alignment,
+                x_alignment=dialog.text_position_x,
+                y_alignment=dialog.text_position_y,
                 bg_color=dialog.get_bg_color_argb(),
                 fg_color=dialog.get_fg_color_argb(),
                 justification = dialog.get_justification_pango(),

@@ -41,15 +41,15 @@ class TitleEditDialog(GladeWindow):
         self.bg_color = kw.get('bg_color', (0, 0, 0, 1))
         self.fg_color = kw.get('fg_color', (1, 1, 1, 1))
         # Centre alignment is the default.
-        self.x_alignment = 0.5
-        self.y_alignment = 0.5
+        self.text_position_x = 10
+        self.text_position_y = 50
         self.justification = gtk.JUSTIFY_LEFT
 
         self.preview = TitlePreview(text=self.text, font_name=self.font_name)
         self.widgets['preview_frame'].add(self.preview)
-        #self.preview.set_preset_size(720, 576)
         settings = project.getSettings()
         self.preview.set_preset_size(settings.videowidth, settings.videoheight)
+
         self.preview.set_size_request( int(300.0*(float(settings.videowidth)/float(settings.videoheight))), 300)
 
         self.widgets['color_button'].connect('clicked', self._run_color_dialog)
@@ -184,8 +184,8 @@ class TitleEditDialog(GladeWindow):
         """Put last changes from dialog into variables."""
         buffer = self.widgets['textview'].props.buffer
         self.text = buffer.get_text(*buffer.get_bounds())
-        self.x_alignment = self.preview.x_position
-        self.y_alignment = self.preview.y_position
+        self.text_position_x = self.preview.x_position
+        self.text_position_y = self.preview.y_position
 
     def run(self):
         """Show TitleEdit dialog."""

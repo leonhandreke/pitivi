@@ -42,7 +42,7 @@ class TitleSource(gst.BaseSrc):
 
         self.project = project
         settings = project.getSettings()
-        self.__gsttemplates__ = (
+        self._gsttemplates_ = (
         gst.PadTemplate("src",
                         gst.PAD_SRC,
                         gst.PAD_ALWAYS,
@@ -50,7 +50,7 @@ class TitleSource(gst.BaseSrc):
                         # XXX: hardcoded width and height
                         gst.Caps("video/x-raw-rgb,depth=32,bpp=32,width=%s,height=%s" % (settings.videowidth, settings.videoheight)))
         )
-        print pad.set_caps("video/x-raw-rgb,depth=32,bpp=32,width=%s,height=%s" % (settings.videowidth, settings.videoheight))
+        #print pad.set_caps("video/x-raw-rgb,depth=32,bpp=32,width=%s,height=%s" % (settings.videowidth, settings.videoheight))
 
     def do_create(self, offset, size):
         gst.debug("offset: %r, size:%r" % (offset, size))
@@ -79,10 +79,8 @@ class TitleSource(gst.BaseSrc):
         layout.set_alignment(self.justification)
         (ink, (x_bearing, y_bearing, t_width, t_height)) = \
             layout.get_pixel_extents()
-        #XXX SOMETHING WRONG. MAYBE width and t_width doesnt correspond?
         x = (width) * self.x_alignment - x_bearing
         y = (height) * self.y_alignment - y_bearing
-        print 'x and y _bearing ->', x_bearing, y_bearing, 'x og y:', x, y
         cr.move_to(x, y)
         pcr.show_layout(layout)
 

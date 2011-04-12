@@ -9,7 +9,7 @@ import goocanvas
 import gtk
 import pango
 
-#from gettext import gettext as _GooCanvas
+from gettext import gettext as _
 
 def print_bounds(b):
     print '<(%r, %r) (%r, %r)>' % (b.x1, b.y1, b.x2, b.y2)
@@ -39,7 +39,7 @@ class TitlePreview(gtk.EventBox):
         'background-color': (
             gobject.TYPE_UINT, 'background color', 'background color',
             0, 0xffffffff, 0,
-            gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
+            gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT)
     }
 
     def __init__(self, font_name, **kw):
@@ -52,10 +52,9 @@ class TitlePreview(gtk.EventBox):
         self.set_properties(**kw)
         self.last_x = None
         self.last_y = None
-
+        print 'kw', kw
         self.canvas = goocanvas.Canvas()
-        self.canvas.props.background_color = 'yellow'
-        #canvas is going to be hiden. Using yellow to be easy to point out if something is wrong with the scalingalocation
+        self.canvas.props.background_color = 'black'
         self.scale = 1
         self.text_item = goocanvas.Text(
             fill_color_rgba=0xffffffff,
@@ -95,8 +94,6 @@ class TitlePreview(gtk.EventBox):
         root.add_child(self.background)
         root.add_child(self.group)
         self.add(self.canvas)
-
-        print 'ROOT:', root
 
         self.group.translate(self.props.x, self.props.y)
 
@@ -149,6 +146,10 @@ class TitlePreview(gtk.EventBox):
         elif property.name == 'foreground-color':
             if hasattr(self, 'text_item'):
                 self.update_color(fg_color_string=value)
+        elif property.name == 'font-name':
+            self.font_name == value
+
+
         else:
             raise AttributeError(property.name)
 
@@ -223,18 +224,12 @@ class TitlePreview(gtk.EventBox):
 
     def size_allocate(self, widget, allocation):
         bounds = self.canvas.get_bounds()
-        print bounds
-        all = self.canvas.get_allocation()
-        print all
+        #print_bounds(bounds)
         self.scale = float(allocation.height)/float(self.preset_height)
-        print 'for', self.canvas.get_scale(), 'til:', self.scale
-        print 'bredde scale', float(allocation.width)/float(self.preset_width)
-
+        print 'scale:', self.scale
         self.canvas.set_scale(self.scale)
-
-        print 'etter', self.canvas.get_scale()
+        self.canvas.set_bounds(0, 0, self.preset_width, self.preset_height)
         alloc_preset = self._get_preset_size()
-        print 'storrelser preset', self.preset_width, self.preset_height, 'alloc', allocation.width, allocation.height
 
         self.background.props.height = self.preset_height
         self.background.props.width = self.preset_width
@@ -246,13 +241,10 @@ class TitlePreview(gtk.EventBox):
         chess_pixbuff = chess_pixbuff.composite_color_simple(self.preset_width, self.preset_height,
                     gtk.gdk.INTERP_TILES, 255, 8, 0x777777, 0x999999)  
         self.chessboard.props.pixbuf = chess_pixbuff
-        bounds = self.canvas.get_bounds()
-        print bounds
-        all = self.canvas.get_allocation()
-        print all
         
         #print_bounds(bounds)
         self.update_position(0, 0)
+        print 'title_preview: canvas bounds:', self.canvas.get_bounds()
 
     def update_position(self, dx=0, dy=0):
         #print 'before', (dx, dy)
@@ -286,6 +278,7 @@ class TitlePreview(gtk.EventBox):
         self.group.translate(dx/self.scale, dy/self.scale)
         self.x_position = (self.group.get_bounds().x1  / alloc_preset.width)
         self.y_position = (self.group.get_bounds().y1  / alloc_preset.height)
-        #print self.x, 'X-Y', self.x_position * 
         return False
+
+gobject.type_register(TitlePreview)
 
