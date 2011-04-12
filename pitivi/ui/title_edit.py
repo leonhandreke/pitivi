@@ -13,8 +13,8 @@ def set_current_color(color_selection, color):
     color -- tuple with four values (RGBA) Range: 0.0 - 1.0
     """
     color_selection.props.current_color = gtk.gdk.Color(
-        int(color[0] * 65535.0), int(color[1] * 65535.0), int(color[2] * 65535.0))
-    color_selection.props.current_alpha = int(color[3] * 65535.0)
+        int(color[0] * 65535), int(color[1] * 65535), int(color[2] * 65535))
+    color_selection.props.current_alpha = int(color[3] * 65535)
 
 def _convert_to_pango_justification(gtk_justification):
     """Convert gtk alignment to pango alignment.
@@ -30,15 +30,10 @@ def _convert_to_pango_justification(gtk_justification):
     elif gtk_justification == gtk.JUSTIFY_CENTER:
         return pango.ALIGN_CENTER
 
-alignments = [
-        (0.0, 0.0), (0.5, 0.0), (1.0, 0.0),
-        (0.0, 0.5), (0.5, 0.5), (1.0, 0.5),
-        (0.0, 1.0), (0.5, 1.0), (1.0, 1.0)]
-
 class TitleEditDialog(GladeWindow):
     glade_file = "title_edit.glade"
 
-    def __init__(self, **kw):
+    def __init__(self, project, **kw):
         GladeWindow.__init__(self)
 
         self.text = kw.get('text', 'Hello, World!')
@@ -52,8 +47,10 @@ class TitleEditDialog(GladeWindow):
 
         self.preview = TitlePreview(text=self.text, font_name=self.font_name)
         self.widgets['preview_frame'].add(self.preview)
-        # XXX: set preview_frame's aspect ratio
-        self.preview.set_size_request(720, 576)
+        #self.preview.set_preset_size(720, 576)
+        settings = project.getSettings()
+        self.preview.set_preset_size(settings.videowidth, settings.videoheight)
+        self.preview.set_size_request( int(300.0*(float(settings.videowidth)/float(settings.videoheight))), 300)
 
         self.widgets['color_button'].connect('clicked', self._run_color_dialog)
         self.widgets['font_button'].connect('clicked', self._run_font_dialog)
@@ -97,7 +94,7 @@ class TitleEditDialog(GladeWindow):
         if response == gtk.RESPONSE_OK:
             self._set_fg_color(fg_color_selection)
             self._set_bg_color(bg_color_selection)
-            self.preview.update_color(self.fg_color_string, self.bg_color_string)
+            self.preview.update_color(self.get_fg_color_rgba(), self.get_bg_color_rgba())
 
     def _run_font_dialog(self, _button):
         """Show font selection dialog."""
@@ -149,17 +146,27 @@ class TitleEditDialog(GladeWindow):
             (color_selection.props.current_alpha / 65535.0))
         self.fg_color_string = color_selection.props.current_color.to_string()
 
-    def get_fg_color_bgra(self):
-        """Get the background color as a tuple with four values (BGRA).
+    def get_fg_color_argb(self):
+        """Get the background color as a tuple with four values (ARGB).
         
         Values range: 0.0 - 1.0"""
         return self.fg_color[2], self.fg_color[1], self.fg_color[0], self.fg_color[3]     
 
-    def get_bg_color_bgra(self):
-        """Get the foreground color as a tuple with four values (BGRA).
+    def get_bg_color_argb(self):
+        """Get the foreground color as a tuple with four values (ARGB).
 
         Values range: 0.0 - 1.0"""
         return self.bg_color[2], self.bg_color[1], self.bg_color[0], self.bg_color[3] 
+    
+    def get_fg_color_rgba(self):
+        """Get the background color as a 32bit number (RGBA)."""
+        return (int(self.fg_color[3] * 255) + int(self.fg_color[2] * 255)*pow(2,8) + 
+            int(self.fg_color[1] * 255)*pow(2,16) + int(self.fg_color[0] * 255)*pow(2,24))
+
+    def get_bg_color_rgba(self):
+        """Get the foreground color as a 32bit number (RGBA)."""
+        return (int(self.bg_color[3] * 255) + int(self.bg_color[2] * 255)*pow(2,8) + 
+            int(self.bg_color[1] * 255)*pow(2,16) + int(self.bg_color[0] * 255)*pow(2,24))
 
     def _buffer_changed(self, buffer):
         """Update text in preview box to correspond to buffer."""

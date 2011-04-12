@@ -9,7 +9,7 @@ import goocanvas
 import gtk
 import pango
 
-from gettext import gettext as _
+#from gettext import gettext as _GooCanvas
 
 def print_bounds(b):
     print '<(%r, %r) (%r, %r)>' % (b.x1, b.y1, b.x2, b.y2)
@@ -24,16 +24,13 @@ class TitlePreview(gtk.EventBox):
 
     __gproperties__ = {
         'text': (
-            gobject.TYPE_STRING, 'text', 'text', _('Hello'),
+            gobject.TYPE_STRING, 'text', 'text', ('Hello'),
             gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
         'x': (
             gobject.TYPE_UINT, 'x position', 'x position', 0, 0xffff, 10,
             gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
         'y': (
             gobject.TYPE_UINT, 'y position', 'y position', 0, 0xffff, 10,
-            gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'alignment': (
-            gobject.TYPE_UINT, 'alignment', 'alignment', 0, 2, 0,
             gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
         'foreground-color': (
             gobject.TYPE_UINT, 'foreground color', 'foreground color',
@@ -57,17 +54,23 @@ class TitlePreview(gtk.EventBox):
         self.last_y = None
 
         self.canvas = goocanvas.Canvas()
-        self.canvas.props.background_color = 'black'
-
+        self.canvas.props.background_color = 'yellow'
+        #canvas is going to be hiden. Using yellow to be easy to point out if something is wrong with the scalingalocation
+        self.scale = 1
         self.text_item = goocanvas.Text(
             fill_color_rgba=0xffffffff,
             x=self.PADDING,
             y=self.PADDING,
             font=font_name,
-            text=self.text)
-
+            text=self.text,
+            use_markup=True)
         text_w, text_h = text_size(self.text_item)
-
+        self.background = goocanvas.Rect(
+            radius_x=0,
+            radius_y=0,
+            fill_color_rgba=0x000000ff)
+        self.chessboard = goocanvas.Image()
+        #chessboard is the background that shows up when the background becomes transparent
         # XXX: Ideally we'd invert the colour underneath the outline.
         self.rect1 = goocanvas.Rect(
             stroke_color_rgba=0xffffffff,
@@ -88,18 +91,19 @@ class TitlePreview(gtk.EventBox):
         self.group.add_child(self.rect2)
         self.group.add_child(self.text_item)
         root = self.canvas.get_root_item()
+        root.add_child(self.chessboard)
+        root.add_child(self.background)
         root.add_child(self.group)
         self.add(self.canvas)
 
-        #print (self.x, self.y)
-        #print (self.group.get_bounds().x1, self.group.get_bounds().y1)
+        print 'ROOT:', root
+
         self.group.translate(self.props.x, self.props.y)
-        #print (self.group.get_bounds().x1, self.group.get_bounds().y1)300
 
         self.connect('button-press-event', self.button_press)
         self.connect('button-release-event', self.button_release)
         self.connect('motion-notify-event', self.motion_notify)
-        self.connect('size-allocate', lambda w, a: self.update_position(0, 0))
+        self.connect('size-allocate', self.size_allocate )
 
     def do_get_property(self, property):
         if property.name == 'text':
@@ -150,9 +154,8 @@ class TitlePreview(gtk.EventBox):
 
     def button_press(self, widget, event):
         bounds = self.group.get_bounds()
-
-        if ((bounds.x1 <= event.x <= bounds.x2) and
-            (bounds.y1 <= event.y <= bounds.y2)):
+        if ((bounds.x1 <= event.x/self.scale <= bounds.x2) and
+            (bounds.y1 <= event.y/self.scale <= bounds.y2)):
             self.last_x = event.x
             self.last_y = event.y
 
@@ -199,27 +202,63 @@ class TitlePreview(gtk.EventBox):
 
             self.update_position(0, 0)
 
-    def update_color(self, fg_color_string=None, bg_color_string=None):
+    def update_color(self, fg_color=None, bg_color=None):
         """Update color of text and background in the preview box.
         
         Keyword arguments:
-        fg_color_string -- usualy from gtk.gdk.Color.to_string()
-        fg_color_string -- usualy from gtk.gdk.Color.to_string()
-
-        Goocanvas doesn't support alpha so color is without alpha.
+        fg_color_string -- 32bit color RGBA
+        fg_color_string -- 32bit color RGBA
         """
-        if fg_color_string != None:
-            self.text_item.props.fill_color = fg_color_string
-        if bg_color_string != None:
-            self.canvas.props.background_color = bg_color_string
+        if fg_color != None:
+            self.text_item.props.fill_color_rgba = fg_color
+        if bg_color != None:
+            self.background.props.fill_color_rgba = bg_color
 
-    def update_position(self, dx, dy):
+    def set_preset_size(self, width, height):
+        self.preset_width = width
+        self.preset_height = height
+
+    def _get_preset_size(self):
+        return gtk.gdk.Rectangle(x=0, y=0, width=self.preset_width, height=self.preset_height)
+
+    def size_allocate(self, widget, allocation):
+        bounds = self.canvas.get_bounds()
+        print bounds
+        all = self.canvas.get_allocation()
+        print all
+        self.scale = float(allocation.height)/float(self.preset_height)
+        print 'for', self.canvas.get_scale(), 'til:', self.scale
+        print 'bredde scale', float(allocation.width)/float(self.preset_width)
+
+        self.canvas.set_scale(self.scale)
+
+        print 'etter', self.canvas.get_scale()
+        alloc_preset = self._get_preset_size()
+        print 'storrelser preset', self.preset_width, self.preset_height, 'alloc', allocation.width, allocation.height
+
+        self.background.props.height = self.preset_height
+        self.background.props.width = self.preset_width
+        self.chessboard.props.height = self.preset_height
+        self.chessboard.props.width = self.preset_width
+
+        chess_pixbuff = gtk.gdk.Pixbuf(colorspace=gtk.gdk.COLORSPACE_RGB,
+            has_alpha=True, bits_per_sample=8, height=self.preset_height, width=self.preset_width)
+        chess_pixbuff = chess_pixbuff.composite_color_simple(self.preset_width, self.preset_height,
+                    gtk.gdk.INTERP_TILES, 255, 8, 0x777777, 0x999999)  
+        self.chessboard.props.pixbuf = chess_pixbuff
+        bounds = self.canvas.get_bounds()
+        print bounds
+        all = self.canvas.get_allocation()
+        print all
+        
+        #print_bounds(bounds)
+        self.update_position(0, 0)
+
+    def update_position(self, dx=0, dy=0):
         #print 'before', (dx, dy)
-        alloc = self.canvas.get_allocation()
-        canvas_bounds = goocanvas.Bounds(0, 0, alloc.width, alloc.height)
+        alloc_preset = self._get_preset_size()
+        canvas_bounds = goocanvas.Bounds(0, 0, alloc_preset.width, alloc_preset.height)
         group_bounds = self.group.get_bounds()
-        #print_bounds(canvas_bounds)
-        #print_bounds(group_bounds)
         canvas_width = canvas_bounds.x2 - canvas_bounds.x1
         canvas_height = canvas_bounds.y2 - canvas_bounds.y1
         group_width = group_bounds.x2 - group_bounds.x1
@@ -244,9 +283,9 @@ class TitlePreview(gtk.EventBox):
         elif group_bounds.y2 + dy > canvas_bounds.y2:
             dy = canvas_bounds.y2 - group_bounds.y2
 
-        self.group.translate(dx, dy)
-        self.x_position = (self.group.get_bounds().x1  /self.size_request()[0])
-        self.y_position = (self.group.get_bounds().y1  /self.size_request()[1])
+        self.group.translate(dx/self.scale, dy/self.scale)
+        self.x_position = (self.group.get_bounds().x1  / alloc_preset.width)
+        self.y_position = (self.group.get_bounds().y1  / alloc_preset.height)
         #print self.x, 'X-Y', self.x_position * 
         return False
 

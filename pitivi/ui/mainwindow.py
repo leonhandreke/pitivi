@@ -690,7 +690,7 @@ class PitiviMainWindow(gtk.Window, Loggable):
         return True
 
     def _addTitleCb(self, unused_action):
-        dialog = TitleEditDialog()
+        dialog = TitleEditDialog(self.project)
         dialog.window.add_button(gtk.STOCK_ADD, gtk.RESPONSE_OK)
         dialog.window.set_default_response(gtk.RESPONSE_OK)
         response = dialog.run()
@@ -701,9 +701,10 @@ class PitiviMainWindow(gtk.Window, Loggable):
                 font_name=dialog.get_font_name(),
                 x_alignment=dialog.x_alignment,
                 y_alignment=dialog.y_alignment,
-                bg_color=dialog.get_bg_color_bgra(),
-                fg_color=dialog.get_fg_color_bgra(),
-                justification = dialog.get_justification_pango()))
+                bg_color=dialog.get_bg_color_argb(),
+                fg_color=dialog.get_fg_color_argb(),
+                justification = dialog.get_justification_pango(),
+                project = self.project))
 
         dialog.destroy()
 
