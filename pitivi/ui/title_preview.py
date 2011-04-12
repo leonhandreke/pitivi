@@ -4,7 +4,6 @@
 # XXX: allow centering the text horizontally and vertically
 # XXX: maintain right margin position when text is right aligned
 
-import gobject
 import goocanvas
 import gtk
 import pango
@@ -22,37 +21,18 @@ def text_size(text):
 class TitlePreview(gtk.EventBox):
     PADDING = 1
 
-    __gproperties__ = {
-        'text': (
-            gobject.TYPE_STRING, 'text', 'text', ('Hello'),
-            gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'x': (
-            gobject.TYPE_UINT, 'x position', 'x position', 0, 0xffff, 10,
-            gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'y': (
-            gobject.TYPE_UINT, 'y position', 'y position', 0, 0xffff, 10,
-            gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'foreground-color': (
-            gobject.TYPE_UINT, 'foreground color', 'foreground color',
-            0, 0xffffffff, 0xffffffff,
-            gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT),
-        'background-color': (
-            gobject.TYPE_UINT, 'background color', 'background color',
-            0, 0xffffffff, 0,
-            gobject.PARAM_READWRITE | gobject.PARAM_CONSTRUCT)
-    }
-
-    def __init__(self, font_name, **kw):
+    def __init__(self, text, font_name, text_position_x, text_position_y):
         gtk.EventBox.__init__(self)
         self.add_events(
             gtk.gdk.BUTTON_PRESS_MASK |
             gtk.gdk.BUTTON_RELEASE_MASK |
             gtk.gdk.BUTTON1_MOTION_MASK)
 
-        self.set_properties(**kw)
+        self.text = text
+        self.text_position_x = text_position_x
+        self.text_position_y = text_position_y
         self.last_x = None
         self.last_y = None
-        print 'kw', kw
         self.canvas = goocanvas.Canvas()
         self.canvas.props.background_color = 'black'
         self.scale = 1
@@ -95,63 +75,24 @@ class TitlePreview(gtk.EventBox):
         root.add_child(self.group)
         self.add(self.canvas)
 
-        self.group.translate(self.props.x, self.props.y)
+        self.group.translate(self.text_position_x, self.text_position_y)
 
         self.connect('button-press-event', self.button_press)
         self.connect('button-release-event', self.button_release)
         self.connect('motion-notify-event', self.motion_notify)
         self.connect('size-allocate', self.size_allocate )
 
-    def do_get_property(self, property):
-        if property.name == 'text':
-            return self.text
-        elif property.name == 'x':
-            return self.x
-        elif property.name == 'y':
-            return self.y
-        elif property.name == 'alignment':
-            return self.alignment
-        else:
-            raise AttributeError
-
-    def do_set_property(self, property, value):
-        if property.name == 'text':
-            self.text = value
-
-            if hasattr(self, 'text_item'):
-                text_w0, text_h0 = text_size(self.text_item)
-                self.text_item.props.text = value
-                text_w1, text_h1 = text_size(self.text_item)
-
-                # Update rectangle sizes to match text.
-                self.rect1.props.width = text_w1 + 2 * self.PADDING
-                self.rect1.props.height = text_h1 + 2 * self.PADDING
-                self.rect2.props.width = text_w1 + 2 * self.PADDING
-                self.rect2.props.height = text_h1 + 2 * self.PADDING
-
-                self.update_position(0, 0)
-        elif property.name == 'x':
-            # XXX: sync to canvas items
-            self.x = value
-        elif property.name == 'y':
-            # XXX: sync to canvas items
-            self.y = value
-        elif property.name == 'alignment':
-            self.alignment = value
-            if hasattr(self, 'text_item'):
-                self.text_item.props.alignment = value
-        elif property.name == 'background-color':
-            if hasattr(self, 'canvas'):
-                self.update_color(bg_color_string=value)
-        elif property.name == 'foreground-color':
-            if hasattr(self, 'text_item'):
-                self.update_color(fg_color_string=value)
-        elif property.name == 'font-name':
-            self.font_name == value
-
-
-        else:
-            raise AttributeError(property.name)
+    def set_text(self, text):
+        if hasattr(self, 'text_item'):
+            text_w0, text_h0 = text_size(self.text_item)
+            self.text_item.props.text = text
+            text_w1, text_h1 = text_size(self.text_item)
+            # Update rectangle sizes to match text.
+            self.rect1.props.width = text_w1 + 2 * self.PADDING
+            self.rect1.props.height = text_h1 + 2 * self.PADDING
+            self.rect2.props.width = text_w1 + 2 * self.PADDING
+            self.rect2.props.height = text_h1 + 2 * self.PADDING
+            self.update_position(0, 0)
 
     def button_press(self, widget, event):
         bounds = self.group.get_bounds()
@@ -226,7 +167,6 @@ class TitlePreview(gtk.EventBox):
         bounds = self.canvas.get_bounds()
         #print_bounds(bounds)
         self.scale = float(allocation.height)/float(self.preset_height)
-        print 'scale:', self.scale
         self.canvas.set_scale(self.scale)
         self.canvas.set_bounds(0, 0, self.preset_width, self.preset_height)
         alloc_preset = self._get_preset_size()
@@ -244,7 +184,6 @@ class TitlePreview(gtk.EventBox):
         
         #print_bounds(bounds)
         self.update_position(0, 0)
-        print 'title_preview: canvas bounds:', self.canvas.get_bounds()
 
     def update_position(self, dx=0, dy=0):
         #print 'before', (dx, dy)
@@ -276,9 +215,7 @@ class TitlePreview(gtk.EventBox):
             dy = canvas_bounds.y2 - group_bounds.y2
 
         self.group.translate(dx/self.scale, dy/self.scale)
-        self.x_position = (self.group.get_bounds().x1  / alloc_preset.width)
-        self.y_position = (self.group.get_bounds().y1  / alloc_preset.height)
+        self.text_position_x = (self.group.get_bounds().x1  / alloc_preset.width)
+        self.text_position_y = (self.group.get_bounds().y1  / alloc_preset.height)
         return False
-
-gobject.type_register(TitlePreview)
 
