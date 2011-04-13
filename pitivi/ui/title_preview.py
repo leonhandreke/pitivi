@@ -1,8 +1,5 @@
 
-# XXX: stop updating last_x/last_y when pointer is outside widget
-# XXX: set cursor to indicate draggability when over text item
 # XXX: allow centering the text horizontally and vertically
-# XXX: maintain right margin position when text is right aligned
 
 import goocanvas
 import gtk
@@ -21,21 +18,22 @@ def text_size(text):
 class TitlePreview(gtk.EventBox):
     PADDING = 1
 
-    def __init__(self, text, font_name, text_position_x, text_position_y):
+    def __init__(self, text, font_name, text_position_x, text_position_y, videowidth, videoheight):
         gtk.EventBox.__init__(self)
         self.add_events(
             gtk.gdk.BUTTON_PRESS_MASK |
             gtk.gdk.BUTTON_RELEASE_MASK |
             gtk.gdk.BUTTON1_MOTION_MASK)
-
         self.text = text
-        self.text_position_x = text_position_x
-        self.text_position_y = text_position_y
+        self.project_width = videowidth 
+        self.project_height = videoheight
         self.last_x = None
         self.last_y = None
+
         self.canvas = goocanvas.Canvas()
         self.canvas.props.background_color = 'black'
         self.scale = 1
+        self.mouse_over = False
         self.text_item = goocanvas.Text(
             fill_color_rgba=0xffffffff,
             x=self.PADDING,
@@ -65,6 +63,15 @@ class TitlePreview(gtk.EventBox):
             radius_x=0,
             radius_y=0)
 
+        if text_position_x is None:
+            self.text_position_x = (self.project_width - text_size(self.text_item)[0])/ 2
+        else:
+            self.text_position_x = text_position_x
+        if text_position_y is None:
+            self.text_position_y = (self.project_height - text_size(self.text_item)[1]) / 2
+        else:
+            self.text_position_y
+
         self.group = goocanvas.Group()
         self.group.add_child(self.rect1)
         self.group.add_child(self.rect2)
@@ -80,19 +87,7 @@ class TitlePreview(gtk.EventBox):
         self.connect('button-press-event', self.button_press)
         self.connect('button-release-event', self.button_release)
         self.connect('motion-notify-event', self.motion_notify)
-        self.connect('size-allocate', self.size_allocate )
-
-    def set_text(self, text):
-        if hasattr(self, 'text_item'):
-            text_w0, text_h0 = text_size(self.text_item)
-            self.text_item.props.text = text
-            text_w1, text_h1 = text_size(self.text_item)
-            # Update rectangle sizes to match text.
-            self.rect1.props.width = text_w1 + 2 * self.PADDING
-            self.rect1.props.height = text_h1 + 2 * self.PADDING
-            self.rect2.props.width = text_w1 + 2 * self.PADDING
-            self.rect2.props.height = text_h1 + 2 * self.PADDING
-            self.update_position(0, 0)
+        self.connect('size-allocate', self.size_allocate)
 
     def button_press(self, widget, event):
         bounds = self.group.get_bounds()
@@ -109,14 +104,28 @@ class TitlePreview(gtk.EventBox):
         return False
 
     def motion_notify(self, widget, event):
+        self._change_cursor(event)
+
         if self.last_x is None:
             return False
-
+ 
         dx = event.x - self.last_x
         dy = event.y - self.last_y
         self.update_position(dx, dy)
         self.last_x = event.x
         self.last_y = event.y
+
+    def _change_cursor(self, event):
+        bounds = self.group.get_bounds()
+        if ((bounds.x1 <= event.x/self.scale <= bounds.x2) and
+            (bounds.y1 <= event.y/self.scale <= bounds.y2)):
+            if self.mouse_over == False:
+                self.mouse_over = True
+                self.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.HAND1))
+        else:
+            if self.mouse_over == True and self.last_x is None:
+                self.mouse_over = False
+                self.window.set_cursor(None)
 
     def update_justification(self, justification):
         """Update justification/alignment of text inside text box.
@@ -126,23 +135,30 @@ class TitlePreview(gtk.EventBox):
         """
         self.text_item.props.alignment = justification    
     
-    def update_font(self, font_name):
+    def set_font(self, font_name):
         """Update text font in the preview box.
 
         Keyword arguments:
         font_name -- usualy from gtk.FontSelection.get_font_name()
         """
         self.text_item.props.font = font_name
+        self._update_text()
+
+    def set_text(self, text):
+        self.text_item.props.text = text
+        self._update_text()    
+
+    def _update_text(self):
+        """Update the box sourounding the text"""
         if hasattr(self, 'text_item'):
             text_w1, text_h1 = text_size(self.text_item)
-
             # Update rectangle sizes to match new font type or font size.
             self.rect1.props.width = text_w1 + 2 * self.PADDING
             self.rect1.props.height = text_h1 + 2 * self.PADDING
             self.rect2.props.width = text_w1 + 2 * self.PADDING
             self.rect2.props.height = text_h1 + 2 * self.PADDING
 
-            self.update_position(0, 0)
+        self.update_position(0, 0)
 
     def update_color(self, fg_color=None, bg_color=None):
         """Update color of text and background in the preview box.
@@ -156,39 +172,30 @@ class TitlePreview(gtk.EventBox):
         if bg_color != None:
             self.background.props.fill_color_rgba = bg_color
 
-    def set_preset_size(self, width, height):
-        self.preset_width = width
-        self.preset_height = height
-
-    def _get_preset_size(self):
-        return gtk.gdk.Rectangle(x=0, y=0, width=self.preset_width, height=self.preset_height)
+    """def set_project_size(self, width, height):
+        self.project_width = width
+        self.project_height = height"""
 
     def size_allocate(self, widget, allocation):
-        bounds = self.canvas.get_bounds()
-        #print_bounds(bounds)
-        self.scale = float(allocation.height)/float(self.preset_height)
+        self.scale = float(allocation.height)/float(self.project_height)
         self.canvas.set_scale(self.scale)
-        self.canvas.set_bounds(0, 0, self.preset_width, self.preset_height)
-        alloc_preset = self._get_preset_size()
+        self.canvas.set_bounds(0, 0, self.project_width, self.project_height)
 
-        self.background.props.height = self.preset_height
-        self.background.props.width = self.preset_width
-        self.chessboard.props.height = self.preset_height
-        self.chessboard.props.width = self.preset_width
+        self.background.props.height = self.project_height
+        self.background.props.width = self.project_width
+        self.chessboard.props.height = self.project_height
+        self.chessboard.props.width = self.project_width
 
         chess_pixbuff = gtk.gdk.Pixbuf(colorspace=gtk.gdk.COLORSPACE_RGB,
-            has_alpha=True, bits_per_sample=8, height=self.preset_height, width=self.preset_width)
-        chess_pixbuff = chess_pixbuff.composite_color_simple(self.preset_width, self.preset_height,
+            has_alpha=True, bits_per_sample=8, height=self.project_height, width=self.project_width)
+        chess_pixbuff = chess_pixbuff.composite_color_simple(self.project_width, self.project_height,
                     gtk.gdk.INTERP_TILES, 255, 8, 0x777777, 0x999999)  
         self.chessboard.props.pixbuf = chess_pixbuff
         
-        #print_bounds(bounds)
         self.update_position(0, 0)
 
     def update_position(self, dx=0, dy=0):
-        #print 'before', (dx, dy)
-        alloc_preset = self._get_preset_size()
-        canvas_bounds = goocanvas.Bounds(0, 0, alloc_preset.width, alloc_preset.height)
+        canvas_bounds = goocanvas.Bounds(0, 0, self.project_width, self.project_height)
         group_bounds = self.group.get_bounds()
         canvas_width = canvas_bounds.x2 - canvas_bounds.x1
         canvas_height = canvas_bounds.y2 - canvas_bounds.y1
@@ -215,7 +222,7 @@ class TitlePreview(gtk.EventBox):
             dy = canvas_bounds.y2 - group_bounds.y2
 
         self.group.translate(dx/self.scale, dy/self.scale)
-        self.text_position_x = (self.group.get_bounds().x1  / alloc_preset.width)
-        self.text_position_y = (self.group.get_bounds().y1  / alloc_preset.height)
+        self.text_position_x = (self.group.get_bounds().x1  / self.project_width)
+        self.text_position_y = (self.group.get_bounds().y1  / self.project_height)
         return False
 

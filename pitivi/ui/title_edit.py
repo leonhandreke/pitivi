@@ -6,7 +6,7 @@ from pitivi.ui.glade import GladeWindow
 from pitivi.ui.title_preview import TitlePreview
 
 def set_current_color(color_selection, color):
-    """" Set color as the selected color in color_selection.
+    """" Set color as the selected color in GTK color_selector.
 
     Keyword arguments:
     color_selection -- gtk.ColorSelection
@@ -35,25 +35,25 @@ class TitleEditDialog(GladeWindow):
 
     def __init__(self, project, **kw):
         GladeWindow.__init__(self)
-
+        settings = project.getSettings()
         self.text = kw.get('text', 'Hello, World!')
         self.font_name = kw.get('fontname', 'Sans 24')
         self.bg_color = kw.get('bg_color', (0, 0, 0, 1))
         self.fg_color = kw.get('fg_color', (1, 1, 1, 1))
-        # Centre alignment is the default.
-        self.text_position_x = 100
-        self.text_position_y = 1
+        self.text_position_x = None
+        self.text_position_y = None
         self.justification = gtk.JUSTIFY_LEFT
 
         self.preview = TitlePreview(text=self.text, 
                 font_name=self.font_name, 
                 text_position_x=self.text_position_x,
-                text_position_y=self.text_position_y)
+                text_position_y=self.text_position_y,
+                videowidth=settings.videowidth, 
+                videoheight=settings.videoheight)
         self.widgets['preview_frame'].add(self.preview)
-        settings = project.getSettings()
-        self.preview.set_preset_size(settings.videowidth, settings.videoheight)
-
+        #self.preview.set_project_size(settings.videowidth, settings.videoheight)
         self.preview.set_size_request( int(300.0*(float(settings.videowidth)/float(settings.videoheight))), 300)
+
 
         self.widgets['color_button'].connect('clicked', self._run_color_dialog)
         self.widgets['font_button'].connect('clicked', self._run_font_dialog)
@@ -116,8 +116,8 @@ class TitleEditDialog(GladeWindow):
         dialog.destroy()
 
         if response == gtk.RESPONSE_OK:
-            self.font_name = font_selection.props.font_name
-            self.preview.update_font(font_selection.get_font_name())
+            self.font_name = font_selection.get_font_name()
+            self.preview.set_font(font_selection.get_font_name())
 
     def _set_bg_color(self, color_selection):
         """Save color selected with gtk.ColorSelection as the background color.
