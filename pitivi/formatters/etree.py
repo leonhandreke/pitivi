@@ -211,13 +211,13 @@ class ElementTreeFormatter(Formatter):
         if klass == TitleSourceFactory:
             props = {}
             props['text'] = element.attrib['text']
-            props['font'], size_str = \
-                element.attrib['font'].rsplit(None, 1)
-            props['text_size'] = int(size_str)
+            props['font_name'] = element.attrib['font_name']
             props['bg_color'] = self._loadColor(element.attrib["bg_color"])
             props['fg_color'] = self._loadColor(element.attrib["fg_color"])
             props['x_alignment'] = float(element.attrib["x_alignment"])
             props['y_alignment'] = float(element.attrib["y_alignment"])
+            props['width'] = element.attrib['width']
+            props['height'] = element.attrib['height']
             factory = klass(**props)
         elif filename is not None:
             if isinstance(filename, unicode):
@@ -269,12 +269,13 @@ class ElementTreeFormatter(Formatter):
     def _saveTitleSourceFactory(self, element, source):
         props = source.source_kw
         element.attrib["text"] = props["text"]
-        element.attrib["font"] = '%s %d' % \
-            (source.source_kw["font"], props["text_size"])
+        element.attrib["font_name"] = props["font_name"]
         element.attrib["bg_color"] = self._saveColor(props["bg_color"])
         element.attrib["fg_color"] = self._saveColor(props["fg_color"])
         element.attrib["x_alignment"] = str(props["x_alignment"])
         element.attrib["y_alignment"] = str(props["y_alignment"])
+        element.attrib["width"] = str(props["width"])
+        element.attrib["height"] = str(props["height"])
         return element
 
     def _saveFactoryRef(self, factory):

@@ -18,13 +18,14 @@ def text_size(text):
 class TitlePreview(gtk.EventBox):
     PADDING = 1
 
-    def __init__(self, text, font_name, text_position_x, text_position_y, videowidth, videoheight):
+    def __init__(self, text, font_name, text_position_x, text_position_y, 
+        videowidth, videoheight):
+
         gtk.EventBox.__init__(self)
         self.add_events(
             gtk.gdk.BUTTON_PRESS_MASK |
             gtk.gdk.BUTTON_RELEASE_MASK |
             gtk.gdk.BUTTON1_MOTION_MASK)
-        self.text = text
         self.project_width = videowidth 
         self.project_height = videoheight
         self.last_x = None
@@ -39,16 +40,17 @@ class TitlePreview(gtk.EventBox):
             x=self.PADDING,
             y=self.PADDING,
             font=font_name,
-            text=self.text,
+            text=text,
             use_markup=True)
-        text_w, text_h = text_size(self.text_item)
+        #chessboard is the background that shows up when the background becomes transparent
         self.background = goocanvas.Rect(
             radius_x=0,
             radius_y=0,
             fill_color_rgba=0x000000ff)
         self.chessboard = goocanvas.Image()
-        #chessboard is the background that shows up when the background becomes transparent
+
         # XXX: Ideally we'd invert the colour underneath the outline.
+        text_w, text_h = text_size(self.text_item)
         self.rect1 = goocanvas.Rect(
             stroke_color_rgba=0xffffffff,
             width=text_w + 2 * self.PADDING,
@@ -90,9 +92,7 @@ class TitlePreview(gtk.EventBox):
         self.connect('size-allocate', self.size_allocate)
 
     def button_press(self, widget, event):
-        bounds = self.group.get_bounds()
-        if ((bounds.x1 <= event.x/self.scale <= bounds.x2) and
-            (bounds.y1 <= event.y/self.scale <= bounds.y2)):
+        if self.mouse_over is True:
             self.last_x = event.x
             self.last_y = event.y
 
@@ -104,6 +104,7 @@ class TitlePreview(gtk.EventBox):
         return False
 
     def motion_notify(self, widget, event):
+        """Change cursor when mouse is over text and move text when draged"""
         self._change_cursor(event)
 
         if self.last_x is None:
@@ -116,14 +117,15 @@ class TitlePreview(gtk.EventBox):
         self.last_y = event.y
 
     def _change_cursor(self, event):
+        """Change cursor if mouse is over the text box"""
         bounds = self.group.get_bounds()
         if ((bounds.x1 <= event.x/self.scale <= bounds.x2) and
             (bounds.y1 <= event.y/self.scale <= bounds.y2)):
-            if self.mouse_over == False:
+            if self.mouse_over is False:
                 self.mouse_over = True
                 self.window.set_cursor(gtk.gdk.Cursor(gtk.gdk.HAND1))
         else:
-            if self.mouse_over == True and self.last_x is None:
+            if self.mouse_over is True and self.last_x is None:
                 self.mouse_over = False
                 self.window.set_cursor(None)
 
@@ -172,10 +174,6 @@ class TitlePreview(gtk.EventBox):
         if bg_color != None:
             self.background.props.fill_color_rgba = bg_color
 
-    """def set_project_size(self, width, height):
-        self.project_width = width
-        self.project_height = height"""
-
     def size_allocate(self, widget, allocation):
         self.scale = float(allocation.height)/float(self.project_height)
         self.canvas.set_scale(self.scale)
@@ -187,9 +185,12 @@ class TitlePreview(gtk.EventBox):
         self.chessboard.props.width = self.project_width
 
         chess_pixbuff = gtk.gdk.Pixbuf(colorspace=gtk.gdk.COLORSPACE_RGB,
-            has_alpha=True, bits_per_sample=8, height=self.project_height, width=self.project_width)
-        chess_pixbuff = chess_pixbuff.composite_color_simple(self.project_width, self.project_height,
-                    gtk.gdk.INTERP_TILES, 255, 8, 0x777777, 0x999999)  
+            has_alpha=True,
+            bits_per_sample=8,
+            height=self.project_height,
+            width=self.project_width)
+        chess_pixbuff = chess_pixbuff.composite_color_simple(self.project_width,
+            self.project_height, gtk.gdk.INTERP_TILES, 255, 8, 0x777777, 0x999999)  
         self.chessboard.props.pixbuf = chess_pixbuff
         
         self.update_position(0, 0)

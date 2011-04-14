@@ -22,7 +22,10 @@ class TitleSource(gst.BaseSrc):
             bg_color=None,
             fg_color=None,
             justification=pango.ALIGN_LEFT,
-            project=None):
+            project=None,
+            width=720,
+            height=576):
+        #width and height is not yet used. Its hardcoded on line 15
         gst.BaseSrc.__init__(self)
         self.start = 0
         self.stop = gst.CLOCK_TIME_NONE
@@ -39,18 +42,6 @@ class TitleSource(gst.BaseSrc):
         self.bg_color = bg_color if bg_color is not None else (0, 0, 0, 1)
         self.fg_color = fg_color if fg_color is not None else (1, 1, 1, 1)
         self.justification = justification
-
-        self.project = project
-        settings = project.getSettings()
-        self._gsttemplates_ = (
-        gst.PadTemplate("src",
-                        gst.PAD_SRC,
-                        gst.PAD_ALWAYS,
-                        #gst.Caps("video/x-raw-rgb,depth=24,bpp=32"))
-                        # XXX: hardcoded width and height
-                        gst.Caps("video/x-raw-rgb,depth=32,bpp=32,width=%s,height=%s" % (settings.videowidth, settings.videoheight)))
-        )
-        #print pad.set_caps("video/x-raw-rgb,depth=32,bpp=32,width=%s,height=%s" % (settings.videowidth, settings.videoheight))
 
     def do_create(self, offset, size):
         gst.debug("offset: %r, size:%r" % (offset, size))

@@ -36,13 +36,13 @@ class TitleEditDialog(GladeWindow):
     def __init__(self, project, **kw):
         GladeWindow.__init__(self)
         settings = project.getSettings()
-        self.text = kw.get('text', 'Hello, World!')
+        self.text = kw.get('text', 'Title')
         self.font_name = kw.get('fontname', 'Sans 24')
         self.bg_color = kw.get('bg_color', (0, 0, 0, 1))
         self.fg_color = kw.get('fg_color', (1, 1, 1, 1))
-        self.text_position_x = None
-        self.text_position_y = None
-        self.justification = gtk.JUSTIFY_LEFT
+        self.text_position_x = kw.get('text_position_x', None)
+        self.text_position_y = kw.get('text_position_y', None)
+        self.justification = kw.get('justification', gtk.JUSTIFY_LEFT)
 
         self.preview = TitlePreview(text=self.text, 
                 font_name=self.font_name, 
@@ -51,15 +51,18 @@ class TitleEditDialog(GladeWindow):
                 videowidth=settings.videowidth, 
                 videoheight=settings.videoheight)
         self.widgets['preview_frame'].add(self.preview)
-        #self.preview.set_project_size(settings.videowidth, settings.videoheight)
-        self.preview.set_size_request( int(300.0*(float(settings.videowidth)/float(settings.videoheight))), 300)
+        self.preview.set_size_request( int(300.0*(float(settings.videowidth)
+                                        /float(settings.videoheight))), 300)
 
 
         self.widgets['color_button'].connect('clicked', self._run_color_dialog)
         self.widgets['font_button'].connect('clicked', self._run_font_dialog)
-        self.widgets['align_left_button'].connect('clicked', self._justify_text, gtk.JUSTIFY_LEFT)
-        self.widgets['align_center_button'].connect('clicked', self._justify_text, gtk.JUSTIFY_CENTER)
-        self.widgets['align_right_button'].connect('clicked', self._justify_text, gtk.JUSTIFY_RIGHT)
+        self.widgets['align_left_button'].connect('clicked',
+            self._justify_text, gtk.JUSTIFY_LEFT)
+        self.widgets['align_center_button'].connect('clicked',
+            self._justify_text, gtk.JUSTIFY_CENTER)
+        self.widgets['align_right_button'].connect('clicked',
+            self._justify_text, gtk.JUSTIFY_RIGHT)
 
         buffer = self.widgets['textview'].get_buffer()
         buffer.connect('changed', self._buffer_changed)
@@ -213,8 +216,6 @@ class TitleEditDialog(GladeWindow):
                 self.preview.update_justification(self.get_justification_pango())
             elif justification == gtk.JUSTIFY_CENTER:
                 self.preview.update_justification(self.get_justification_pango())
-            
-            
         return
 
     def get_justification_pango(self):
