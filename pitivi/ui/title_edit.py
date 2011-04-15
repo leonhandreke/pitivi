@@ -54,7 +54,6 @@ class TitleEditDialog(GladeWindow):
         self.preview.set_size_request( int(300.0*(float(settings.videowidth)
                                         /float(settings.videoheight))), 300)
 
-
         self.widgets['color_button'].connect('clicked', self._run_color_dialog)
         self.widgets['font_button'].connect('clicked', self._run_font_dialog)
         self.widgets['align_left_button'].connect('clicked',
@@ -66,6 +65,9 @@ class TitleEditDialog(GladeWindow):
 
         buffer = self.widgets['textview'].get_buffer()
         buffer.connect('changed', self._buffer_changed)
+
+        #Toggle correct justify button
+        self._justify_text(None, self.justification)
 
         # Hack: GladeWindow hides TitleEditDialog's run() with gtk.Dialog's;
         # undo that.
@@ -205,17 +207,40 @@ class TitleEditDialog(GladeWindow):
         """Justify/align text.
         
             Keyword arguments:
-            justification -- the justification, 
-            one of three static vars (gtk.JUSTIFY_LEFT, gtk.JUSTIFY_RIGHT, gtk.JUSTIFY_CENTER)  
+            justification -- the justification,
+            one of three static vars (gtk.JUSTIFY_LEFT, gtk.JUSTIFY_RIGHT, gtk.JUSTIFY_CENTER)
+            _button -- the pressed button
+            
+            If _button is None the function is called in init and none of the buttons is active
         """
         if justification == gtk.JUSTIFY_LEFT or gtk.JUSTIFY_RIGHT or gtk.JUSTIFY_CENTER:
-            self.justification = justification
             if justification == gtk.JUSTIFY_LEFT:
-                self.preview.update_justification(self.get_justification_pango())
+                if  self.widgets['align_left_button'].get_active() or _button is None:
+                    self.justification = justification
+                    self.preview.update_justification(self.get_justification_pango())
+                    self.widgets['align_center_button'].set_active(False)
+                    self.widgets['align_right_button'].set_active(False)
+                    self.widgets['align_left_button'].set_active(True)
+                else:
+                    return
             elif justification == gtk.JUSTIFY_RIGHT:
-                self.preview.update_justification(self.get_justification_pango())
+                if  self.widgets['align_right_button'].get_active() or _button is None:
+                    self.justification = justification
+                    self.preview.update_justification(self.get_justification_pango())
+                    self.widgets['align_center_button'].set_active(False)
+                    self.widgets['align_right_button'].set_active(True)
+                    self.widgets['align_left_button'].set_active(False)
+                else:
+                    return
             elif justification == gtk.JUSTIFY_CENTER:
-                self.preview.update_justification(self.get_justification_pango())
+                if  self.widgets['align_center_button'].get_active() or _button is None:
+                    self.justification = justification
+                    self.preview.update_justification(self.get_justification_pango())
+                    self.widgets['align_center_button'].set_active(True)
+                    self.widgets['align_right_button'].set_active(False)
+                    self.widgets['align_left_button'].set_active(False)
+                else:
+                    return
         return
 
     def get_justification_pango(self):

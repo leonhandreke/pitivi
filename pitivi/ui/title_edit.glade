@@ -39,7 +39,7 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkToolButton" id="align_left_button">
+              <widget class="GtkToggleToolButton" id="align_left_button">
                 <property name="visible">True</property>
                 <property name="is_important">True</property>
                 <property name="label" translatable="yes">Alig Left</property>
@@ -52,7 +52,7 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkToolButton" id="align_center_button">
+              <widget class="GtkToggleToolButton" id="align_center_button">
                 <property name="visible">True</property>
                 <property name="is_important">True</property>
                 <property name="label" translatable="yes">Center</property>
@@ -65,7 +65,7 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkToolButton" id="align_right_button">
+              <widget class="GtkToggleToolButton" id="align_right_button">
                 <property name="visible">True</property>
                 <property name="is_important">True</property>
                 <property name="label" translatable="yes">Align Right</property>
