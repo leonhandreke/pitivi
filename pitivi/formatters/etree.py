@@ -210,7 +210,7 @@ class ElementTreeFormatter(Formatter):
 
         if klass == TitleSourceFactory:
             props = {}
-            props['text'] = element.attrib['text']
+            props['text'] = eval(element.attrib['text'])
             props['font_name'] = element.attrib['font_name']
             props['bg_color'] = self._loadColor(element.attrib["bg_color"])
             props['fg_color'] = self._loadColor(element.attrib["fg_color"])
@@ -268,7 +268,7 @@ class ElementTreeFormatter(Formatter):
 
     def _saveTitleSourceFactory(self, element, source):
         props = source.source_kw
-        element.attrib["text"] = props["text"]
+        element.attrib["text"] = repr(props["text"])
         element.attrib["font_name"] = props["font_name"]
         element.attrib["bg_color"] = self._saveColor(props["bg_color"])
         element.attrib["fg_color"] = self._saveColor(props["fg_color"])

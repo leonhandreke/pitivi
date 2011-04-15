@@ -1,4 +1,4 @@
-
+#XXX Use ui/common.py for unpacking/packing of color 32bit
 import gtk
 import pango
 
