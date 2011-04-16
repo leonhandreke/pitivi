@@ -26,6 +26,7 @@ import re
 import gobject
 gobject.threads_init()
 import gst
+import pango
 
 from xml.etree.ElementTree import Element, SubElement, tostring, parse
 
@@ -195,6 +196,14 @@ class ElementTreeFormatter(Formatter):
         assert match, "couldn't parse saved color %r" % str
         return tuple(int(x, 16) / 255.0 for x in match.groups())
 
+    def _loadJustification(self, justification):
+        if int(justification) == 0:
+            return pango.ALIGN_LEFT
+        elif int(justification) == 1:
+            return pango.ALIGN_CENTER
+        elif int(justification) == 2:
+            return pango.ALIGN_RIGHT
+
     def _loadObjectFactory(self, klass, element):
         """Instantiate the specified class and set its attributes.
 
@@ -216,8 +225,9 @@ class ElementTreeFormatter(Formatter):
             props['fg_color'] = self._loadColor(element.attrib["fg_color"])
             props['x_alignment'] = float(element.attrib["x_alignment"])
             props['y_alignment'] = float(element.attrib["y_alignment"])
-            props['width'] = element.attrib['width']
-            props['height'] = element.attrib['height']
+            props['width'] = int(element.attrib['width'])
+            props['height'] = int(element.attrib['height'])
+            props['justification'] = self._loadJustification(element.attrib['justification'])
             factory = klass(**props)
         elif filename is not None:
             if isinstance(filename, unicode):
@@ -266,6 +276,14 @@ class ElementTreeFormatter(Formatter):
         return '#%02x%02x%02x%02x' % tuple(
             int(x * 255) for x in (color[0], color[1], color[2], color[3]))
 
+    def _saveJustification(self, pango_justification):
+        if pango_justification == pango.ALIGN_LEFT:
+            return 0
+        elif pango_justification == pango.ALIGN_CENTER:
+            return 1
+        elif pango_justification == pango.ALIGN_RIGHT:
+            return 2
+
     def _saveTitleSourceFactory(self, element, source):
         props = source.source_kw
         element.attrib["text"] = repr(props["text"])
@@ -276,6 +294,7 @@ class ElementTreeFormatter(Formatter):
         element.attrib["y_alignment"] = str(props["y_alignment"])
         element.attrib["width"] = str(props["width"])
         element.attrib["height"] = str(props["height"])
+        element.attrib["justification"] = str(self._saveJustification(props["justification"]))
         return element
 
     def _saveFactoryRef(self, factory):

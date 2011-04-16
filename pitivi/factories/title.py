@@ -15,7 +15,7 @@ def make_id():
 class TitleSourceFactory(SourceFactory):
     def __init__(self, **kw):
         SourceFactory.__init__(self, "title://%d" % make_id(),
-            kw['text'][:27])
+            kw['text'].replace('\n', ' '))
 
         caps = gst.Caps('video/x-raw-yuv; video/x-raw-rgb')
         self.addOutputStream(VideoStream(caps))
